@@ -4,6 +4,7 @@ from ._daisy import daisy
 from ._hog import hog
 from .texture import (greycomatrix, greycoprops,
                       local_binary_pattern,
+                      local_binary_pattern_magnitude,
                       multiblock_lbp,
                       draw_multiblock_lbp)
 
@@ -35,6 +36,7 @@ __all__ = ['canny',
            'greycomatrix',
            'greycoprops',
            'local_binary_pattern',
+           'local_binary_pattern_magnitude',
            'multiblock_lbp',
            'draw_multiblock_lbp',
            'peak_local_max',

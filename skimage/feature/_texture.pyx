@@ -270,6 +270,91 @@ def _local_binary_pattern(double[:, ::1] image,
     return np.asarray(output)
 
 
+def _local_binary_pattern_magnitude(double[:, ::1] image,
+                                    int P, float R):
+    """Gray scale and rotation invariant LBP (Local Binary Patterns).
+       This is a so-called LBP-Magnitude variant of the operator.
+       The original `_local_bianry_pattern` is also known as LBP-Sign.
+
+    LBP is an invariant descriptor that can be used for texture classification.
+
+    Parameters
+    ----------
+    image : (N, M) double array
+        Graylevel image.
+    P : int
+        Number of circularly symmetric neighbour set points (quantization of
+        the angular space).
+    R : float
+        Radius of circle (spatial resolution of the operator).
+
+    Returns
+    -------
+    output : (N, M) array
+        LBP image.
+    """
+
+    # texture weights
+    cdef int[::1] weights = 2 ** np.arange(P, dtype=np.int32)
+
+    # local position of texture elements
+    rr = - R * np.sin(2 * np.pi * np.arange(P, dtype=np.double) / P)
+    cc = R * np.cos(2 * np.pi * np.arange(P, dtype=np.double) / P)
+    cdef double[::1] rp = np.round(rr, 5)
+    cdef double[::1] cp = np.round(cc, 5)
+
+    # pre-allocate arrays for computation
+    cdef double[::1] texture = np.zeros(P, dtype=np.double)
+    cdef double[::1] absolute_difference = np.zeros(P, dtype=np.double)
+    cdef double[::1] magnitude_texture = np.zeros(P, dtype=np.double)
+
+    output_shape = (image.shape[0], image.shape[1])
+    cdef double[:, ::1] output = np.zeros(output_shape, dtype=np.double)
+
+    cdef Py_ssize_t rows = image.shape[0]
+    cdef Py_ssize_t cols = image.shape[1]
+
+    cdef double lbp
+    cdef double mean
+    cdef double diff
+    cdef double sum_
+    cdef Py_ssize_t r, c, i
+
+    with nogil:
+        for r in range(image.shape[0]):
+            for c in range(image.shape[1]):
+                for i in range(P):
+                    bilinear_interpolation[cnp.float64_t, double, double](
+                            &image[0, 0], rows, cols, r + rp[i], c + cp[i],
+                            b'C', 0, &texture[i])
+
+                sum_ = 0.0
+                for i in range(P):
+                    diff = texture[i] - image[r, c]
+                    if diff < 0:
+                        absolute_difference[i] = -diff
+                    else:
+                        absolute_difference[i] = diff
+                    sum_ += absolute_difference[i]
+                mean = sum_ / P
+
+                for i in range(P):
+                    if absolute_difference[i] >= mean:
+                        magnitude_texture[i] = 1
+                    else:
+                        magnitude_texture[i] = 0
+
+                lbp = 0
+
+
+                for i in range(P):
+                    lbp += magnitude_texture[i] * weights[i]
+
+                output[r, c] = lbp
+
+    return np.asarray(output)
+
+
 # Constant values that are used by `_multiblock_lbp` function.
 # Values represent offsets of neighbour rectangles relative to central one.
 # It has order starting from top left and going clockwise.

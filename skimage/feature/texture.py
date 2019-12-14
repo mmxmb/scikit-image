@@ -9,6 +9,7 @@ from ..util import img_as_float
 from ..color import gray2rgb
 from ._texture import (_glcm_loop,
                        _local_binary_pattern,
+                       _local_binary_pattern_magnitude,
                        _multiblock_lbp)
 
 
@@ -330,6 +331,46 @@ def local_binary_pattern(image, P, R, method='default'):
     }
     image = np.ascontiguousarray(image, dtype=np.double)
     output = _local_binary_pattern(image, P, R, methods[method.lower()])
+    return output
+
+
+def local_binary_pattern_magnitude(image, P, R):
+    """Gray scale and rotation invariant LBP (Local Binary Patterns).
+    This is a LBP-Magnitude variation of the operator. The original
+    `local_binary_pattern` function is also known as LBP-Sign operator [2].
+
+    LBP is an invariant descriptor that can be used for texture classification.
+
+    Parameters
+    ----------
+    image : (N, M) array
+        Graylevel image.
+    P : int
+        Number of circularly symmetric neighbour set points (quantization of
+        the angular space).
+    R : float
+        Radius of circle (spatial resolution of the operator).
+
+    Returns
+    -------
+    output : (N, M) array
+        LBP image.
+
+    References
+    ----------
+    .. [1] Multiresolution Gray-Scale and Rotation Invariant Texture
+           Classification with Local Binary Patterns.
+           Timo Ojala, Matti Pietikainen, Topi Maenpaa.
+           http://www.ee.oulu.fi/research/mvmp/mvg/files/pdf/pdf_94.pdf, 2002.
+       [2] Remote Sensing Image Scene Classification Using Multi-Scale 
+           Completed Local Binary Patterns and Fisher Vectors. 
+           Huang et al.
+           https://www.mdpi.com/2072-4292/8/6/483 , 2016.
+    """
+    check_nD(image, 2)
+
+    image = np.ascontiguousarray(image, dtype=np.double)
+    output = _local_binary_pattern_magnitude(image, P, R)
     return output
 
 
